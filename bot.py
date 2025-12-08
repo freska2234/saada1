@@ -11,7 +11,7 @@ import re
 
 # ========== CONFIGURATION ==========
 BOT_TOKEN = "7458997340:AAEKGFvkALm5usoFBvKdbGEs4b2dz5iSwtw"
-ADMIN_IDS = [5895491379, 844663875, 1927825525]
+ADMIN_IDS = [5895491379, 844663875, 1927825525, 6586128055]
 
 # ========== MULTI-USER STATS ==========
 user_sessions = {}  # {user_id: {stats}}
