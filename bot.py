@@ -54,9 +54,10 @@ stripe_key = 'pk_live_xGjx0tNaPIOL8HmeEtPiqbOA'
 cookies = {
     '_ga': 'GA1.2.1469472480.1766603596',
     '__stripe_mid': 'f1875054-94d2-4f87-9f4e-c7c88dfd9b6aa945ae',
-    'WHMCSAlq9bDX1US52': 's812rpv5ph5kt1bjpvvi2r9uco',
-    '__stripe_sid': 'ea56ed14-094f-45ae-8766-fa8aabe42c05115429',
-    '_ga_40ZE5DNNP3': 'GS2.2.s1766629662$o6$g1$t1766629823$j48$l0$h0',
+    'WHMCSAlq9bDX1US52': 'n2dlkci01osl6b3v6ou1qesdee',
+    'WHMCSlogin_auth_tk': 'ZDhXR1E2eVlVNWNGNE5UWW9TNzBKdUVSS3FXVTJCenhKVHdRc0NsQURxenk0QVlaVnpEZzk3LzZLVUdSRGozSkc5TlhlWjZ3T0M4SkhibVlqbkhqWExQMldWSHU1a1EwRVQ3TTZnWWZDL0RnTElBVldaV2xKMXMvbzlYeG4wZm1wZGRmSkw2OTlHY0NML2x3ZnJ2OEh4S2xMc2JOSENmcytKTVRwRGkwcXNDdkJOVWlyOFlsNFErbXh3dVZFbUNkY0xYTm1TakxQSDkvV2RLMnkzRWk1aHhvVHh5ZXpBdktaQ1plYmlqNWxlQ3FJOTFLeFgyMG8rSEZydjdRVHNxNnVhQ0xLVEMwTVR3aE1WYU1mcUc2MDZmUUV0UCtUQ3ZaczRwcSt0OTR3VnYrMUdQcGp3ZTIzdXdKVzE3RjhiR2REQ1F0QU1BTEFQckxMTG9na1pMKzFSS1ErODJNcmVOKzBrQjJPZUR0RFI4Y1NxeWtQaUdqV044WjNMempSWHlOREd3bUpDQ2JmOXRiM2pWUjNYWklyWC9mZlVJQUE2RWRhdms9',
+    '__stripe_sid': '2785d8fb-cfe7-436c-8ffe-373983dd15ea22a84f',
+    '_ga_40ZE5DNNP3': 'GS2.2.s1766632023$o7$g1$t1766632062$j21$l0$h0',
 }
 
 def get_status_color(status):
@@ -106,7 +107,7 @@ async def check_card(card, bot_app, user_id):
         }
 
         data_intent = {
-            'token': 'b2e727b9476b285added1cd2531d092da03c3814',
+            'token': 'fa1d7df042580abf4a7bd676fddfd7c8d36cc02d',
             'checkout': 'true',
             'custtype': 'existing',
             'account_id': '18911',
@@ -190,19 +191,19 @@ async def check_card(card, bot_app, user_id):
             f'&payment_method_data[card][exp_year]={yy}'
             f'&payment_method_data[guid]=a32e4de1-e975-4f08-a0f7-e1c7597315c3fb0e66'
             f'&payment_method_data[muid]=f1875054-94d2-4f87-9f4e-c7c88dfd9b6aa945ae'
-            f'&payment_method_data[sid]=ea56ed14-094f-45ae-8766-fa8aabe42c05115429'
+            f'&payment_method_data[sid]=2785d8fb-cfe7-436c-8ffe-373983dd15ea22a84f'
             f'&payment_method_data[pasted_fields]=number'
             f'&payment_method_data[payment_user_agent]=stripe.js%2Fc264a67020%3B+stripe-js-v3%2Fc264a67020%3B+split-card-element'
             f'&payment_method_data[referrer]=https%3A%2F%2Fclients.servarica.com'
             f'&payment_method_data[time_on_page]=16829'
-            f'&payment_method_data[client_attribution_metadata][client_session_id]=4197f825-db16-4e12-bae3-9ee022d718fa'
+            f'&payment_method_data[client_attribution_metadata][client_session_id]=7f4132cc-0395-4c09-8aa0-4f27bf51d4b3'
             f'&payment_method_data[client_attribution_metadata][merchant_integration_source]=elements'
             f'&payment_method_data[client_attribution_metadata][merchant_integration_subtype]=split-card-element'
             f'&payment_method_data[client_attribution_metadata][merchant_integration_version]=2017'
             f'&expected_payment_method_type=card'
             f'&use_stripe_sdk=true'
             f'&key={stripe_key}'
-            f'&client_attribution_metadata[client_session_id]=4197f825-db16-4e12-bae3-9ee022d718fa'
+            f'&client_attribution_metadata[client_session_id]=7f4132cc-0395-4c09-8aa0-4f27bf51d4b3'
             f'&client_attribution_metadata[merchant_integration_source]=elements'
             f'&client_attribution_metadata[merchant_integration_subtype]=split-card-element'
             f'&client_attribution_metadata[merchant_integration_version]=2017'
