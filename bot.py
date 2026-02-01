@@ -8,7 +8,7 @@ from datetime import datetime
 import os
 
 # ========== CONFIGURATION ==========
-BOT_TOKEN = "8334507568:AAEAX1kHSnU5PZXeLsDAkvOsZx6roHMHAr8"
+BOT_TOKEN = "8334507568:AAEJakB6G_kPVNOX6r3vZGc8ZqcLPhOmCLM"
 ADMIN_IDS = [5895491379, 6220135474]
 
 # ========== MULTI-USER STATS ==========
@@ -56,7 +56,7 @@ cookies = {
     '__stripe_mid': '8951e240-c053-4a71-870b-1dc18a6904b642e0c5',
     '__stripe_sid': 'acc18a41-65ea-486e-afd5-10847920d1f23fae8b',
     'WHMCSAlq9bDX1US52': 'jersjlo7vvspb9mia7csu9l6i9',
-    '_ga_40ZE5DNNP3': 'GS2.2.s1769974235$o10$g1$t1769974388$j43$l0$h0',
+    '_ga_40ZE5DNNP3': 'GS2.2.s1769974235$o10$g1$t1769975810$j60$l0$h0',
 }
 
 def get_status_color(status):
