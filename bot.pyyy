@@ -9,7 +9,7 @@ from datetime import datetime
 import os
 
 # ========== CONFIGURATION ==========
-BOT_TOKEN = "8334507568:AAEAX1kHSnU5PZXeLsDAkvOsZx6roHMHAr8"  # Replace with your bot token
+BOT_TOKEN = "8334507568:AAEJakB6G_kPVNOX6r3vZGc8ZqcLPhOmCLM"  # Replace with your bot token
 ADMIN_IDS = [5895491379,6220135474]  # Replace with admin user IDs
 
 # ========== MULTI-USER STATS ==========
