@@ -53,20 +53,22 @@ def reset_user_stats(user_id):
 # ========== Stripe Configuration from test.py ==========
 stripe_key = 'pk_live_CFEaNA7LjEZgspZDKnDxeQJZ00Ne5Of6uU'
 cookies = {
-    '_hjSession_3605126': 'eyJpZCI6IjE3NThiM2VkLWQyZWItNGFhMC1iM2Q0LWVmYzc0YmJiYTlmMCIsImMiOjE3NjY0OTMzMzUzODAsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjoxfQ==',
-    'intercom-device-id-vwhwt4d6': 'ee3ebfea-8837-426a-8c76-a2cc0dc0abf6',
-    '_hjSessionUser_3605126': 'eyJpZCI6ImQzNmFlMTdlLTI0MWMtNWRiOS1hYmNmLTM2MjY1NmJjZDUyOSIsImNyZWF0ZWQiOjE3NjY0OTMzMzUzNzksImV4aXN0aW5nIjp0cnVlfQ==',
-    '_gid': 'GA1.2.225410859.1766493355',
-    'smuuid': '19b4b3585e8-98ee22311512-22b0a454-0f4d866e-7147c2fd-9f009fe6cdf2',
-    '__mmapiwsid': '019b472b-366f-7c22-88a7-338f7140681e:3687c2399655c5dcbb96f666ec7430ee3bc6f72d',
-    '_smvs': 'T1RIRVI=',
-    'CookieConsent': '{stamp:%274aLpd0iQeIx0rsdEXqSjYE07azsjhhScV3n+VxJ3/41eRNzqsVDJQA==%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27explicit%27%2Cver:1%2Cutc:1766493359845%2Cregion:%27eg%27}',
-    '__stripe_mid': '4bc94b67-42d9-4211-a7e9-58461a2b910ff0f1cb',
-    'SESSID7dfc': 'is8hb6736a436bi6t9j06jsjv0',
-    '_gcl_au': '1.1.201178503.1766493344.1874117477.1766493380.1766495690',
-    '_ga': 'GA1.1.1306708116.1766493336',
-    '_ga_WPKWS2FHC9': 'GS2.1.s1766493335$o1$g1$t1766495725$j52$l0$h1527233066',
-    'smvr': 'eyJ2aXNpdHMiOjEsInZpZXdzIjo0NiwidHMiOjE3NjY0OTU3MjUzNzEsImlzTmV3U2Vzc2lvbiI6ZmFsc2V9',
+    'smuuid': '19bf1ce066c-b79880da0d58-ef6f63bb-98256dd4-fce9b13e-8f8ab167eb2f',
+    'intercom-device-id-vwhwt4d6': 'a833f5f2-661d-4a1f-97ba-71a53dd2269c',
+    '_hjSessionUser_3605126': 'eyJpZCI6IjU5MzNjZTQxLTRmZTgtNWRhNS1iZTQ1LWE0YjRkZTUzYTA5YiIsImNyZWF0ZWQiOjE3NjkyODgzNjk4NzMsImV4aXN0aW5nIjp0cnVlfQ==',
+    'CookieConsent': '{stamp:%272NqObZPQAUvxDv6mvePsSgbIaOIjg6MRMeI514F7q6nedShJIA8ugA==%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27explicit%27%2Cver:1%2Cutc:1769288373442%2Cregion:%27eg%27}',
+    '__stripe_mid': 'aa9125c9-0c76-40e6-9fd8-a6bde244a86926206a',
+    '_gid': 'GA1.2.845500118.1769878227',
+    'SESSID7dfc': 'spghnfe1cq56i2n8lvmaakh8is',
+    '_hjSession_3605126': 'eyJpZCI6ImNjN2ViYzI3LTZlYTktNDE4Ny1hOWI5LTk1YjBlMTIzMzM5MyIsImMiOjE3Njk5NzE0NDU2MDYsInMiOjEsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowfQ==',
+    '_smvs': 'TkVYVA==',
+    '_gcl_au': '1.1.1955868350.1769288370.1430225777.1769971451.1769971451',
+    '_gat': '1',
+    'cf_clearance': 'vxfUmB22uO_53LUVhmMF26M1jnSfLEpDJZ7uouNoWnw-1769975384-1.2.1.1-fSPurM77t0qu3CTM_bmsjvZhXVUQUp4QpVcMOa7zam8xrFkROHRUnu.XSE._JP8beGWvdtc29je1hnbaFvw_XnfZGiE5w4WkAF4cVRDIZfqOMRJ2.Kc59kjFE_jwl2cN7edb7BaTGKgDy4c3Y0XWyQrQqKyfkK6Z3bqilEV.l7iKSx_Uo8mcqXCVKp.geBXo3_65K6p9yEG36NskfcOcK8qs6HsCk1Q8jsgT2b_CFbY',
+    'smvr': 'eyJ2aXNpdHMiOjYsInZpZXdzIjo1OSwidHMiOjE3Njk5NzUzODQ2NDcsImlzTmV3U2Vzc2lvbiI6ZmFsc2V9',
+    '_ga': 'GA1.1.608306310.1769288370',
+    '_ga_WPKWS2FHC9': 'GS2.1.s1769971442$o6$g1$t1769975384$j59$l0$h1727759712',
+    '__stripe_sid': '0b5af70e-3ee9-49ce-95ff-e913ac61d95e85b8cc',
 }
 
 def get_status_color(status):
