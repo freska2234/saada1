@@ -3,3 +3,5 @@ requests==2.31.0
 urllib3==2.1.0
 PySocks==1.7.1
 requests[socks]
+pyTelegramBotAPI
+curl_cffi
