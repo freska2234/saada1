@@ -379,29 +379,38 @@ async def update_dashboard(bot_app, user_id):
             pass
 
 # ========== PROCESS CARDS ==========
+CONCURRENT_CHECKS = 3  # عدد الكروت المتوازية - غيره لـ 5 أو 10 حسب ما تريد
+
+async def process_single_card(card, bot_app, user_id, semaphore):
+    stats = get_user_stats(user_id)
+    if not stats['is_running']:
+        return
+    async with semaphore:
+        if not stats['is_running']:
+            return
+        stats['checking'] = min(stats['checking'] + 1, CONCURRENT_CHECKS)
+        await check_card(card, bot_app, user_id)
+        stats['cards_checked'] += 1
+        stats['checking'] = max(stats['checking'] - 1, 0)
+
 async def process_cards(cards, bot_app, user_id):
     stats = get_user_stats(user_id)
+    semaphore = asyncio.Semaphore(CONCURRENT_CHECKS)
 
-    for i, card in enumerate(cards):
-        if not stats['is_running']:
-            stats['last_response'] = 'Stopped'
+    async def dashboard_loop():
+        while stats['is_running']:
             await update_dashboard(bot_app, user_id)
-            break
+            await asyncio.sleep(1)
 
-        parts = card.split('|')
-        masked = f"{parts[0][:6]}****{parts[0][-4:]}" if len(parts) > 0 and len(parts[0]) > 10 else card
-        stats['current_card'] = masked
-        stats['checking'] = 1
+    dash_task = asyncio.create_task(dashboard_loop())
 
-        await update_dashboard(bot_app, user_id)
+    tasks = [
+        asyncio.create_task(process_single_card(card, bot_app, user_id, semaphore))
+        for card in cards
+    ]
+    await asyncio.gather(*tasks)
 
-        await check_card(card, bot_app, user_id)
-
-        stats['cards_checked'] += 1
-        stats['checking'] = 0
-
-        await update_dashboard(bot_app, user_id)
-        await asyncio.sleep(0.3)
+    dash_task.cancel()
 
     stats['is_running'] = False
     stats['checking'] = 0
@@ -422,6 +431,7 @@ async def process_cards(cards, bot_app, user_id):
             parse_mode='Markdown'
         )
         os.remove(filename)
+
 
 # ========== TELEGRAM HANDLERS ==========
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
