@@ -73,7 +73,7 @@ def do_login():
             session.post(
                 'https://www.dobies.co.uk/cart-JSON.cfm',
                 headers=add_to_cart_headers,
-                data="quantity=1&addtobasket=1&prodcode=MH7775&sku=KH9100&name=Geranium+'Best+Red'+F1",
+                data="Quantity=1&addtobasket=1&prodcode=MH-27484&sku=KH7341&name=Garlic+Lovers+Collection+(Spring+%26+Autumn)",
                 timeout=20,
             )
             print("[+] تم إضافة المنتج للسلة.")
