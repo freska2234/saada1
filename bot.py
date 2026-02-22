@@ -15,8 +15,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 BOT_TOKEN  = "8334507568:AAEJakB6G_kPVNOX6r3vZGc8ZqcLPhOmCLM"
 ADMIN_IDS  = [5895491379, 6220135474, 844663875]
 
-LOGIN_EMAIL    = "2pefzuby3klhbyz8k9lr690@tnbeta.com"
-LOGIN_PASSWORD = "111222333mM"
+LOGIN_EMAIL    = "owyxtc64686m+zpup@outlook.com"
+LOGIN_PASSWORD = "owyxtc64686m+zpup@outlook.com"
 
 # ========== AUTO LOGIN ==========
 dobies_session = None
