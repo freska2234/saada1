@@ -66,14 +66,14 @@ def do_login():
                 'accept-language': 'ar,en-US;q=0.9,en;q=0.8',
                 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'origin': 'https://www.dobies.co.uk',
-                'referer': 'https://www.dobies.co.uk/basket',
+                'referer': 'https://www.dobies.co.uk/SUSGW2/peony-pink-hawaiian-coral_mh-76854',
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'x-requested-with': 'XMLHttpRequest',
             }
             session.post(
                 'https://www.dobies.co.uk/cart-JSON.cfm',
                 headers=add_to_cart_headers,
-                data="prodcode=MH8288&name=Rose+'Scented+Double+Red'&quantity=1&cart=1&sku=INC-10672",
+                data = "quantity=1&addtobasket=1&prodcode=MH-76854&sku=KA8442&name=Peony+'Pink+Hawaiian+Coral'"
                 timeout=20,
             )
             print("[+] تم إضافة المنتج للسلة.")
