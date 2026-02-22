@@ -73,7 +73,7 @@ def do_login():
             session.post(
                 'https://www.dobies.co.uk/cart-JSON.cfm',
                 headers=add_to_cart_headers,
-                data = "quantity=1&addtobasket=1&prodcode=MH-76854&sku=KA8442&name=Peony+'Pink+Hawaiian+Coral'"
+                data = "Quantity=1&addtobasket=1&prodcode=MH322&name=Carrot+'Autumn+King+2'+-+Seeds&sku=433811",
                 timeout=20,
             )
             print("[+] تم إضافة المنتج للسلة.")
