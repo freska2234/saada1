@@ -66,14 +66,14 @@ def do_login():
                 'accept-language': 'ar,en-US;q=0.9,en;q=0.8',
                 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'origin': 'https://www.dobies.co.uk',
-                'referer': 'https://www.dobies.co.uk/potatoes-garlic-onions/garlic-bulbs/spring-planting-garlic',
+                'referer': 'https://www.dobies.co.uk/vegetable-seeds/blight-resistant-seeds/tomato-seeds-crimson-plum-f1_mh-63924',
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'x-requested-with': 'XMLHttpRequest',
             }
             session.post(
                 'https://www.dobies.co.uk/cart-JSON.cfm',
                 headers=add_to_cart_headers,
-                data="Quantity=1&addtobasket=1&prodcode=MH-27484&sku=KH7341&name=Garlic+Lovers+Collection+(Spring+%26+Autumn)",
+                data="Quantity=1&addtobasket=1&prodcode=MH-63924&sku=435194&name=Tomato+'Crimson+Plum'+(Indeterminate)+F1+-+Seeds",
                 timeout=20,
             )
             print("[+] تم إضافة المنتج للسلة.")
