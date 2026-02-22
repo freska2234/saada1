@@ -66,7 +66,7 @@ def do_login():
                 'accept-language': 'ar,en-US;q=0.9,en;q=0.8',
                 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'origin': 'https://www.dobies.co.uk',
-                'referer': 'https://www.dobies.co.uk/flower-plants/geranium-best-red_mh7775',
+                'referer': 'https://www.dobies.co.uk/potatoes-garlic-onions/garlic-bulbs/spring-planting-garlic',
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'x-requested-with': 'XMLHttpRequest',
             }
